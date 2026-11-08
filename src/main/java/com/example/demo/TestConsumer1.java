@@ -6,7 +6,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class TestConsumer1 {
 
-    @KafkaListener(topics = "save-db", groupId = "test")
+    @KafkaListener(
+            topics = "save-db",
+            groupId = "test",
+            properties = "isolation.level=read_committed"
+    )
     public void consume(byte[] bytes) {
         System.out.println(new String(bytes));
     }

@@ -2,6 +2,7 @@ package com.example.demo;
 
 import org.apache.ibatis.annotations.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -57,7 +58,6 @@ public class OutboxWorker {
         })
         List<Message> findMessages(Offset offset);
 
-
         @Update("""
                 update outbox_offsets
                 set 
@@ -86,6 +86,9 @@ public class OutboxWorker {
     @Autowired
     OutboxMapper outboxMapper;
 
+    @Autowired
+    KafkaTemplate<String, byte[]> outboxKafkaTemplate;
+
     final long lockTimeout = 1;
     final int loopTimeout = 5;
 
@@ -108,22 +111,23 @@ public class OutboxWorker {
         while (isRunning.get()) {
             final Offset offset = getAvailablePartitionAndLock(LocalDateTime.now().plusDays(lockTimeout));
             if (offset == null) {
+                System.out.println("no available partitions");
                 sleep5Sec();
                 continue;
             }
 
             final List<Message> messages = getMessagesFromPartition(offset);
-            if (!messages.isEmpty()) {
-                sendBatchToKafka(messages);
+            if (!messages.isEmpty() && sendBatchToKafka(messages)) {
                 updatePartition(messages.getLast(), offset.partition());
+                System.out.println("move forward offsets");
             } else {
                 updatePartition(offset.partition());
+                System.out.println("unlock and read again");
             }
-            System.out.println("loop");
         }
     }
 
-    void updatePartition(final Message msg,final int partition) {
+    void updatePartition(final Message msg, final int partition) {
         outboxMapper.updatePartitionHappy(msg.transactionId(), msg.id(), partition);
     }
 
@@ -131,8 +135,20 @@ public class OutboxWorker {
         outboxMapper.updatePartitionSad(partition, LocalDateTime.now().plusSeconds(loopTimeout));
     }
 
-    void sendBatchToKafka(final List<Message> messages) {
-        //todo()
+    boolean sendBatchToKafka(final List<Message> messages) {
+        try {
+            return outboxKafkaTemplate.executeInTransaction(op -> {
+                for (final var msg : messages) {
+                    op.send(msg.topic(), msg.payload());
+                }
+                return true;
+            });
+        } catch (Exception e) {
+            System.out.println("cannot execute kafka tx");
+            e.printStackTrace();
+            return false;
+        }
+
     }
 
     List<Message> getMessagesFromPartition(final Offset offset) {
