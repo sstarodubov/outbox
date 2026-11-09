@@ -8,7 +8,7 @@ create table outbox_offsets (
 );
 
 create table outbox_messages (
-	id int4 primary key,
+	id bigserial primary key,
 	topic varchar(128) not null,
 	"key" varchar(128),
 	"type" varchar,

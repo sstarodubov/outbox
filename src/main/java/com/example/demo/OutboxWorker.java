@@ -48,7 +48,7 @@ public class OutboxWorker {
                  ) and 
                  transaction_id < pg_snapshot_xmin(pg_current_snapshot())
                  order by transaction_id, id 
-                 limit 2
+                 limit 100 
                 """)
         @ConstructorArgs({
                 @Arg(column = "topic", javaType = String.class),
@@ -89,7 +89,7 @@ public class OutboxWorker {
     @Autowired
     KafkaTemplate<String, byte[]> outboxKafkaTemplate;
 
-    final long lockTimeout = 1;
+    final long lockTimeout = 5;
     final int loopTimeout = 5;
 
     final AtomicBoolean isRunning = new AtomicBoolean(true);
@@ -108,10 +108,10 @@ public class OutboxWorker {
     }
 
     void loop() {
+        System.out.println("start loop");
         while (isRunning.get()) {
-            final Offset offset = getAvailablePartitionAndLock(LocalDateTime.now().plusDays(lockTimeout));
+            final Offset offset = getAvailablePartitionAndLock(LocalDateTime.now().plusMinutes(lockTimeout));
             if (offset == null) {
-                System.out.println("no available partitions");
                 sleep5Sec();
                 continue;
             }
@@ -119,10 +119,8 @@ public class OutboxWorker {
             final List<Message> messages = getMessagesFromPartition(offset);
             if (!messages.isEmpty() && sendBatchToKafka(messages)) {
                 updatePartition(messages.getLast(), offset.partition());
-                System.out.println("move forward offsets");
             } else {
                 updatePartition(offset.partition());
-                System.out.println("unlock and read again");
             }
         }
     }

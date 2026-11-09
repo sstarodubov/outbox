@@ -22,8 +22,21 @@ public class DemoApplication {
 		@Autowired
 		OutboxWorker outboxWorker;
 
+		@Autowired
+		OutboxClient client;
+
 		@Override
 		public void run(ApplicationArguments args) throws Exception {
+			/*
+			client code
+			int n = 20000;
+			for (int i = 0; i < n; i++) {
+				client.save(new OutboxClient.OutboxMsg("outbox-topic-5", String.valueOf(i + 1).getBytes(StandardCharsets.UTF_8)));
+			}
+
+			 */
+
+
 			outboxWorker.start();
 		}
 	}
