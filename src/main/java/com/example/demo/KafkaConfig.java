@@ -1,5 +1,6 @@
 package com.example.demo;
 
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.springframework.boot.kafka.autoconfigure.KafkaProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,6 +19,9 @@ public class KafkaConfig {
             KafkaProperties kafkaProperties) {
 
         final Map<String, Object> props = kafkaProperties.buildProducerProperties();
+        props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
+        props.put(ProducerConfig.ACKS_CONFIG, "all");
+
         final DefaultKafkaProducerFactory<String, byte[]> factory = new DefaultKafkaProducerFactory<>(props);
         factory.setTransactionIdPrefix( "outbox-" + UUID.randomUUID() + "-" ); //должен быть уникальный во всем кластере
         return factory;
