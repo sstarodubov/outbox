@@ -1,6 +1,6 @@
 create table outbox_offsets (
    "partition" serial primary key,
-   last_processed_id int4 not null,
+   last_processed_id int8 not null,
    available_after timestamp default now() not null,
    last_processed_transaction_id xid8 not null
 );
