@@ -27,17 +27,15 @@ public class DemoApplication {
 
 		@Override
 		public void run(ApplicationArguments args) throws Exception {
-			/*
-			client code
+			//client();
+			outboxWorker.start();
+		}
+
+		void client() {
 			int n = 20000;
 			for (int i = 0; i < n; i++) {
-				client.save(new OutboxClient.OutboxMsg("outbox-topic-5", String.valueOf(i + 1).getBytes(StandardCharsets.UTF_8)));
+				client.save(new OutboxClient.OutboxMsg("outbox-topic-6", String.valueOf(i + 1).getBytes(StandardCharsets.UTF_8)));
 			}
-
-			 */
-
-
-			outboxWorker.start();
 		}
 	}
 }
