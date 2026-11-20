@@ -2,7 +2,7 @@ server.port: ${PORT:8080}
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/postgres
+    url: jdbc:postgresql://localhost:5432/postgres?reWriteBatchedInserts=true
     username: postgres
     password: mysecretpassword
     driver-class-name: org.postgresql.Driver
