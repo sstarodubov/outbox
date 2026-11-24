@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,21 +33,24 @@ public class SqlBatchTemplateService {
     }
 
     private final SqlSessionTemplate batchSqlSessionTemplate;
-    private final Repo repo;
+
+    @Autowired
+    Repo repo;
+
+    private final Repo repoBatch;
 
     public SqlBatchTemplateService(
             @Qualifier("batchSqlSessionTemplate")
             SqlSessionTemplate batchSqlSessionTemplate, Repo repo) {
         this.batchSqlSessionTemplate = batchSqlSessionTemplate;
-        this.repo = repo;
+        this.repoBatch = batchSqlSessionTemplate.getMapper(Repo.class);
     }
 
     @Transactional
     public boolean batchInsert(List<Msg> msgs) {
-        Repo mapper = batchSqlSessionTemplate.getMapper(Repo.class);
 
         for (int i = 0; i < msgs.size(); i++) {
-            mapper.insert(msgs.get(i));
+            repoBatch.insert(msgs.get(i));
 
             if ((i + 1) % Common.BATCH_SIZE == 0) {
                 batchSqlSessionTemplate.flushStatements();

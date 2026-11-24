@@ -1,9 +1,6 @@
 package com.example.demo;
 
-import com.example.demo.db.MyBatisForeach;
-import com.example.demo.db.NativeJdbcBatchInsertService;
-import com.example.demo.db.NativeJdbcBatchInsertWithAnnotationService;
-import com.example.demo.db.SqlBatchTemplateService;
+import com.example.demo.db.*;
 import com.example.demo.uuidgen.UUIDService;
 import org.mybatis.spring.SqlSessionTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,8 +40,15 @@ public class DemoApplication {
 		@Autowired
 		UUIDService uuidService;
 
+		@Autowired
+		OpenSessionSqlBatchTemplateService openSessionSqlBatchTemplateService;
+
+		@Autowired
+		HibernateBatchInsert hibernateBatchInsert;
+
 		@Override
 		public void run(ApplicationArguments args) throws Exception {
 		}
 	}
+
 }

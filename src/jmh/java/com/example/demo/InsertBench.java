@@ -16,9 +16,9 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Warmup(iterations = 3)
-@Measurement(iterations = 3)
-@Fork(3)
+@Warmup(iterations = 2)
+@Measurement(iterations = 1)
+@Fork(1)
 public class InsertBench {
 
     private ConfigurableApplicationContext context;
@@ -27,8 +27,11 @@ public class InsertBench {
     private NativeJdbcBatchInsertService jdbc;
     private NativeJdbcBatchInsertWithAnnotationService jdbcWithAnnotation;
     private UUIDService uuidService;
+    private OpenSessionSqlBatchTemplateService openSessionSqlBatchTemplateService;
+    private HibernateBatchInsert hibernate;
 
     private List<Msg> msgs = new ArrayList<>(Common.ALL);
+    private List<HibMsg> hibMsgs = new ArrayList<>(Common.ALL);
     UUIDService.Value v4 = new UUIDService.Value(UUID.randomUUID().toString(), 1, "hello");
     UUIDService.Value v7 = new UUIDService.Value(UUIDService.generate().toString(), 1, "hello");
 
@@ -42,6 +45,13 @@ public class InsertBench {
         jdbc = context.getBean(NativeJdbcBatchInsertService.class);
         jdbcWithAnnotation = context.getBean(NativeJdbcBatchInsertWithAnnotationService.class);
         uuidService = context.getBean(UUIDService.class);
+        openSessionSqlBatchTemplateService = context.getBean(OpenSessionSqlBatchTemplateService.class);
+        hibernate = context.getBean(HibernateBatchInsert.class);
+    }
+
+    @Setup(Level.Invocation)
+    public void set() {
+        hibMsgs = HibMsg.generateRnd(Common.ALL);
     }
 
     @TearDown(Level.Trial)
@@ -59,7 +69,6 @@ public class InsertBench {
     public boolean uuidV7() {
         return uuidService.insert(new UUIDService.Value(UUIDService.generate().toString(), 1, "hello"));
     }
-
 
     @Benchmark
     public boolean foreachBatchInsertMyBatis() {
@@ -81,4 +90,18 @@ public class InsertBench {
         return jdbcWithAnnotation.batchInsert(msgs);
     }
 
+    @Benchmark
+    public boolean openSessionMybatisBatch() {
+        return openSessionSqlBatchTemplateService.batchInsert(msgs);
+    }
+
+    @Benchmark
+    public boolean hibernateEntityManager() {
+        return hibernate.batchInsert(hibMsgs);
+    }
+
+    @Benchmark
+    public boolean springDataInsert() {
+        return hibernate.batchJpaInsert(hibMsgs);
+    }
 }
